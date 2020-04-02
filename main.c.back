@@ -1,0 +1,12 @@
+#include <stdio.h>
+#include "socketserver.h"
+void clientStatus(char* ip, int port, int status)
+{
+	printf("client:%s:%d: status: %d\n", ip, port, status);
+}
+int main(void)
+{
+	register_clientStatus(clientStatus);
+	Server_init("0.0.0.0", 12345);
+	return 0;
+}
