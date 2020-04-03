@@ -21,9 +21,106 @@
 //printf()
 #include <stdio.h>
 
+//malloc
+#include <stdlib.h>
+
 //self include
 #include "socketserver.h"
 
+//全局表
+LIST *glist = NULL;
+
+//全局表状态
+static int glistmask = 0;
+
+
+static int countlistnum(void)
+{
+	int c = 0;
+	LIST* tmp = glist;
+	while(NULL != tmp)
+	{
+		tmp = tmp->next;
+		c++;
+	}
+	return c;
+}
+
+//insert
+static int addtolisttail(char data)
+{
+	int c = 0;
+	LIST* tmplist = NULL;
+	LIST* tmp = NULL;
+	int glistwaitcount = 0;
+	c = countlistnum();
+	printf("0\n");
+	while(1 == glistmask)
+	{
+		glistwaitcount++;
+		if(glistwaitcount > LIST_TIMEOUT)
+		{
+			glistwaitcount = 0;
+			return -1;
+		}
+	}
+	glistmask = 1;
+	c = countlistnum();
+	printf("1\n");
+	if(c >= LIST_MAX)
+	{
+		glistmask = 0;
+		return -1;
+	}
+	tmplist = (LIST *)malloc(sizeof(LIST));
+	tmplist->data = data;
+	tmplist->next = NULL;
+	if(NULL == glist)
+	{
+		glist = tmplist;
+	}
+	else
+	{
+		tmp = glist;
+		while(NULL != tmp->next)
+		{
+			tmp = tmp->next;
+		}
+		tmp->next = tmplist;
+		tmp = NULL;
+		tmplist = NULL;
+	}
+	glistmask = 0;
+	printf("2\n");
+	return 0;
+}
+
+static int deletelisthead(void)
+{
+	LIST* tmp = NULL;
+	int glistwaitcount = 0;
+	while(1 == glistmask)
+	{
+		glistwaitcount++;
+		if(glistwaitcount > LIST_TIMEOUT)
+		{
+			glistwaitcount = 0;
+			return -1;
+		}
+	}
+	glistmask = 1;
+	if(NULL == glist)
+		return 0;
+	else
+	{
+		tmp = glist->next;
+		free(glist);
+		glist = tmp;
+		tmp = NULL;
+	}
+	glistmask = 0;
+	return 0;
+}
 //客户端链接套接字
 static CLIENT_INFO client_info[CLIENT_MAX];
 
@@ -137,11 +234,14 @@ void shutdowns1(void)
 //用于测试链接关闭,无报文处理
 static void link_control()
 {
-	int i;
+	int i, ret;
 	char* closestr = NULL;
 	char* sendtostr = NULL;
 	char* broadcaststr = NULL;
 	char* shutdownstr = NULL;
+	char* addstr = NULL;
+	char* rmstr = NULL;
+	char* scanstr = NULL;
 	for(i = 0; i < CLIENT_MAX; i++)
 	{
 		if(client_info[i].socketid < 0)
@@ -150,6 +250,10 @@ static void link_control()
 		sendtostr = strstr(client_info[i].recvbuffer, "sendto");
 		broadcaststr = strstr(client_info[i].recvbuffer, "broadcast");
 		shutdownstr = strstr(client_info[i].recvbuffer, "shutdown");
+		addstr = strstr(client_info[i].recvbuffer, "add");
+		rmstr = strstr(client_info[i].recvbuffer, "rm");
+		scanstr = strstr(client_info[i].recvbuffer, "scan");
+		client_info[i].recvbuffer[0] = '\0';
 		if(NULL != closestr)
 		{
 			closeClient("192.168.0.102");
@@ -165,6 +269,22 @@ static void link_control()
 		else if(NULL != shutdownstr)
 		{
 			shutdowns1();
+		}
+		else if(NULL != addstr)
+		{
+			ret = addtolisttail(1);
+			if(0 == ret)
+				printf("add one to list\n");
+		}
+		else if(NULL != rmstr)
+		{
+			ret = deletelisthead();
+			if(0 == ret)
+				printf("delete one from list\n");
+		}
+		else if(NULL != scanstr)
+		{
+			printf("list num %d\n", countlistnum());
 		}
 	}	
 }
@@ -295,9 +415,6 @@ int Server_init(char* ip, int port)
 				}
 				else
 				{
-					printf("server:%s:%d received from %s at PORT %d\n",
-						ip, port, inet_ntop(AF_INET, &clientaddr.sin_addr, ipstr, sizeof(ipstr)),
-						ntohs(clientaddr.sin_port));
 					memcpy(client_info[i].recvbuffer, recvbuffer, ret);
 					client_info[i].recvbuffer[ret] = '\0';
 					sprintf(client_info[i].client_ip, "%s", inet_ntop(AF_INET, &clientaddr.sin_addr, ipstr, sizeof(ipstr)));

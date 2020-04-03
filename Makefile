@@ -1,5 +1,4 @@
-all:test
-	
+all:test	
 test:main.o
 	gcc -o test main.o -I. -L. -lsocketserver -Wl,-rpath=.
 main.o:main.c
