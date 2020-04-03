@@ -3,10 +3,14 @@
 题目来源
 	0，                 嵌入式软件工程师面试题目
 代码参考来源
-	0，makefile来源:    https://www.cnblogs.com/marf/p/6795377.html
 	1，回调函数模型：   https://blog.csdn.net/qq_33242956/article/details/91863220
 	2，selectIO复用模型 https://github.com/spch2008/Socket/blob/master/tcp/select/selectsrv.c
 系统和编译工具链
 	ubuntu16.04 gcc5.4.0
 测试工具来源
 	0, netassist        http://www.cmsoft.cn
+编译运行
+	make lib
+	make
+	./test
+	

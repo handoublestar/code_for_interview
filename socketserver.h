@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <netinet/in.h>
+
 //客户端链接状态
 #define STATUS_NEW  1	//刚建立链接
 #define STATUS_RECV 2	//服务器接收数据中
@@ -16,6 +18,15 @@ extern "C" {
 #define RECVBUFF_LEN 1000
 #define CLIENT_MAX 10
 
+//客户端链接信息
+typedef struct client_info
+{
+	int socketid;
+	char client_ip[INET_ADDRSTRLEN];
+	char recvbuffer[RECVBUFF_LEN];
+	char sendbuffer[RECVBUFF_LEN];
+} CLIENT_INFO;
+
 typedef void(* callback_clientStatus)(char* ip, int port, int status);
 typedef void(* callback_clientMsg)(char* ip, int port, char* buf, int len);
 
@@ -24,6 +35,9 @@ extern void register_clientStatus(callback_clientStatus callback);
 
 //客户端消息回调函数
 extern void register_clientMsg(callback_clientMsg callback);
+
+//关闭指定ip客户端
+extern int closeClient(char* ip);
 
 //服务器端初始化
 extern int Server_init(char* ip, int port);
